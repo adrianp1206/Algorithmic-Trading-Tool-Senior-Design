@@ -13,8 +13,24 @@ def fetch_tsla_data(start_date='2015-01-01', end_date='2024-01-01'):
     Returns:
     tsla_data: DataFrame, The historical stock data for TSLA.
     """
-    tsla_date = yf.download('TSLA', start=start_date, end=end_date)
-    return tsla_date
+    tsla_data = yf.download('TSLA', start='2008-01-01', end='2021-12-31')
+    
+    # Fetch additional fundamental data
+    tsla = yf.Ticker('TSLA')
+    fundamentals = {
+        "DE Ratio": tsla.info.get("debtToEquity"),
+        "Return on Equity": tsla.info.get("returnOnEquity"),
+        "Price/Book": tsla.info.get("priceToBook"),
+        "Profit Margin": tsla.info.get("profitMargins"),
+        "Diluted EPS": tsla.info.get("trailingEps"),
+        "Beta": tsla.info.get("beta")
+    }
+
+    # Add fundamentals as static values for the whole period if no historical data is available
+    for key, value in fundamentals.items():
+        tsla_data[key] = value
+
+    return tsla_data
 
 def calculate_technical_indicators(df):
     """
@@ -56,19 +72,14 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 
-def create_lstm_input(df, target_column='Adj Close', lookback=60):
+def create_lstm_input(data, target_column='adj_close', lookback=20):
     X, y = [], []
+    for i in range(lookback, len(data)):
+        X.append(data.iloc[i-lookback:i].values)
+        y.append(data.iloc[i][target_column]) 
+    return np.array(X), np.array(y)
 
-    for i in range(lookback, len(df)):
-        X.append(df[target_column].iloc[i-lookback:i].values)
-        y.append(df[target_column].iloc[i])
-
-    X, y = np.array(X), np.array(y)
-    X = X.reshape((X.shape[0], X.shape[1], 1))
-
-    return X, y
-
-def preprocess_data(df):
+def preprocess_data(data):
     """
     Preprocess the stock data by handling missing values and scaling the data.
     
@@ -78,13 +89,11 @@ def preprocess_data(df):
     Returns:
     df: DataFrame, The preprocessed data.
     """
-    df.fillna(method='ffill', inplace=True)
-
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    
-    df['Adj Close'] = scaler.fit_transform(df[['Adj Close']])
-
-    return df, scaler
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(data[['Adj Close', 'Volume', 'DE Ratio', 'Return on Equity', 
+                                             'Price/Book', 'Profit Margin', 'Diluted EPS', 'Beta']])
+    return pd.DataFrame(scaled_data, columns=['Adj Close', 'Volume', 'DE Ratio', 'Return on Equity', 
+                                              'Price/Book', 'Profit Margin', 'Diluted EPS', 'Beta']), scaler
 
 def fetch_data_up_to_last_week(ticker='TSLA', start_date='2023-01-01', end_date='2024-09-27'):
     """
