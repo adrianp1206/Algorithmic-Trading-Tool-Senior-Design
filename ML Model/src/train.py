@@ -7,7 +7,7 @@ def train_lstm_model():
     tsla_data = fetch_tsla_data('2008-01-01', '2021-12-31')
     tsla_data, scaler = preprocess_data(tsla_data)
 
-    X, y = create_lstm_input(tsla_data, target_column='Adj Close', lookback=100)
+    X, y = create_lstm_input(tsla_data, target_column='Adj Close', lookback=20)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
     input_shape = (X_train.shape[1], X_train.shape[2])
@@ -23,4 +23,4 @@ def train_lstm_model():
     plt.legend()
     plt.show()
 
-    model.save("lstm_tsla_model_v3.h5")
+    model.save("lstm_tsla_model_rework_v2.h5")
