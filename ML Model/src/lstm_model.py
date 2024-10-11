@@ -29,8 +29,8 @@ class Attention(Layer):
 
 def build_lstm_model(input_shape):
     inputs = Input(shape=input_shape)
-    lstm_out = LSTM(units=50, return_sequences=True)(inputs)
-    dropout_out = Dropout(0.2)(lstm_out)
+    lstm_out = LSTM(units=44, return_sequences=True)(inputs)
+    dropout_out = Dropout(0.25)(lstm_out)
     attention_out = Attention()(dropout_out) 
     output = Dense(1, activation='linear')(attention_out) 
 

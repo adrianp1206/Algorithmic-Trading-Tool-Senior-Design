@@ -27,7 +27,7 @@ def train_lstm_model():
     model = build_lstm_model(input_shape)
 
     # Train the model using the training and development sets
-    history = model.fit(X_train, y_train, epochs=100, batch_size=30, validation_data=(X_dev, y_dev))
+    history = model.fit(X_train, y_train, epochs=90, batch_size=32, validation_data=(X_dev, y_dev))
 
     # Plot training and validation loss
     plt.plot(history.history['loss'], label='Training Loss')
@@ -39,7 +39,7 @@ def train_lstm_model():
     plt.show()
 
     # Save the model
-    model.save("lstm_tsla_model_rework_v7.h5")
+    model.save("lstm_tsla_model_rework_v10.h5")
 
     # Evaluate the model on the test set
     test_loss, test_mse = model.evaluate(X_test, y_test)
