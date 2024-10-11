@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 def train_lstm_model():
-    tsla_data = fetch_tsla_data()
+    tsla_data = fetch_tsla_data('2008-01-01', '2021-12-31')
     tsla_data, scaler = preprocess_data(tsla_data)
 
     X, y = create_lstm_input(tsla_data, target_column='Adj Close', lookback=100)
