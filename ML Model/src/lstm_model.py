@@ -1,22 +1,38 @@
 import tensorflow as tf 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
 
+class Attention(Layer):
+    def __init__(self, **kwargs):
+        super(Attention, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.Wa = self.add_weight(shape=(input_shape[-1], input_shape[-1]),
+                                  initializer='glorot_uniform',
+                                  trainable=True)
+        self.b = self.add_weight(shape=(input_shape[-1],),
+                                 initializer='zeros',
+                                 trainable=True)
+        self.u = self.add_weight(shape=(input_shape[-1], 1),
+                                 initializer='glorot_uniform',
+                                 trainable=True)
+        super(Attention, self).build(input_shape)
+
+    def call(self, inputs):
+        et = K.tanh(K.dot(inputs, self.Wa) + self.b)
+        at = K.softmax(K.dot(et, self.u), axis=1)
+        output = K.sum(inputs * at, axis=1)
+        return output
+
 def build_lstm_model(input_shape):
-    model = Sequential()
+    inputs = Input(shape=input_shape)
+    lstm_out = LSTM(units=50, return_sequences=True)(inputs)
+    dropout_out = Dropout(0.2)(lstm_out)
+    attention_out = Attention()(dropout_out) 
+    output = Dense(1)(attention_out) 
 
-    model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
-    model.add(Dropout(0.2))
-
-    model.add(LSTM(units=50, return_sequences=False))
-    model.add(Dropout(0.2))
-
-    model.add(Dense(1))
-
-    learning_rate = 0.0005 
-    optimizer = Adam(learning_rate=learning_rate)
-
-    model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['mean_squared_error'])
+    model = Model(inputs=inputs, outputs=output)
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])
 
     return model
