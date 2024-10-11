@@ -32,7 +32,7 @@ def build_lstm_model(input_shape):
     lstm_out = LSTM(units=50, return_sequences=True)(inputs)
     dropout_out = Dropout(0.2)(lstm_out)
     attention_out = Attention()(dropout_out) 
-    output = Dense(1, activation='sigmoid')(attention_out) 
+    output = Dense(1, activation='linear')(attention_out) 
 
     model = Model(inputs=inputs, outputs=output)
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])

@@ -39,7 +39,7 @@ def train_lstm_model():
     plt.show()
 
     # Save the model
-    model.save("lstm_tsla_model_rework_v6.h5")
+    model.save("lstm_tsla_model_rework_v7.h5")
 
     # Evaluate the model on the test set
     test_loss, test_mse = model.evaluate(X_test, y_test)
