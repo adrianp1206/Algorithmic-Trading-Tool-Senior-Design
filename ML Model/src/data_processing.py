@@ -125,3 +125,35 @@ def fetch_last_week_data(ticker='TSLA', start_date='2024-09-30', end_date='2024-
     stock_data = yf.download(ticker, start=start_date, end=end_date)
     return stock_data
 
+def fetch_last_month_data(ticker='TSLA', start_date='2024-09-01', end_date='2024-10-01'):
+    """
+    Fetch stock data for last week.
+    """
+    stock_data = yf.download(ticker, start=start_date, end=end_date)
+    return stock_data
+
+def fetch_data_prior_to_last_month(ticker='TSLA', start_date='2008-01-01', last_month_start='2024-09-01'):
+    """
+    Fetch stock data up to the start of the last month and include fundamental indicators.
+    """
+    # Download historical stock price data
+    stock_data = yf.download(ticker, start=start_date, end=last_month_start)
+    
+    # Fetch fundamental data
+    ticker_info = yf.Ticker(ticker)
+    fundamentals = {
+        'DE Ratio': ticker_info.info.get('debtToEquity', None),
+        'Return on Equity': ticker_info.info.get('returnOnEquity', None),
+        'Price/Book': ticker_info.info.get('priceToBook', None),
+        'Profit Margin': ticker_info.info.get('profitMargins', None),
+        'Diluted EPS': ticker_info.info.get('trailingEps', None),
+        'Beta': ticker_info.info.get('beta', None)
+    }
+    
+    # Create a DataFrame for fundamental data, repeated for each date in stock_data
+    fundamentals_df = pd.DataFrame([fundamentals] * len(stock_data), index=stock_data.index)
+    
+    # Concatenate stock price data with the fundamental indicators
+    combined_data = pd.concat([stock_data, fundamentals_df], axis=1)
+    
+    return combined_data
