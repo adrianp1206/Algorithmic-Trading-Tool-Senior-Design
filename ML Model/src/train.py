@@ -23,4 +23,4 @@ def train_lstm_model():
     plt.legend()
     plt.show()
 
-    model.save("lstm_tsla_model_rework_v4.h5")
+    model.save("lstm_tsla_model_rework_v5.h5")

@@ -1,7 +1,9 @@
 import tensorflow as tf 
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
+from tensorflow.keras.layers import LSTM, Layer, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
+import tensorflow.keras.backend as K
+
 
 class Attention(Layer):
     def __init__(self, **kwargs):
