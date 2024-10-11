@@ -74,4 +74,3 @@ def train_lstm_model():
     plt.legend()
     plt.show()
 
-train_lstm_model()
