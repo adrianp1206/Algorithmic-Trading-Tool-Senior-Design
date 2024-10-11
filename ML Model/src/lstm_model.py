@@ -3,6 +3,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import LSTM, Layer, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
 import tensorflow.keras.backend as K
+from tensorflow.keras.regularizers import l2
 
 
 class Attention(Layer):
@@ -29,7 +30,7 @@ class Attention(Layer):
 
 def build_lstm_model(input_shape):
     inputs = Input(shape=input_shape)
-    lstm_out = LSTM(units=44, return_sequences=True)(inputs)
+    lstm_out = LSTM(units=46, return_sequences=True)(inputs)
     dropout_out = Dropout(0.25)(lstm_out)
     attention_out = Attention()(dropout_out) 
     output = Dense(1, activation='linear')(attention_out) 
