@@ -157,3 +157,53 @@ def fetch_data_prior_to_last_month(ticker='TSLA', start_date='2008-01-01', last_
     combined_data = pd.concat([stock_data, fundamentals_df], axis=1)
     
     return combined_data
+
+import talib
+
+def add_technical_indicators(stock_data):
+    """
+    Add technical indicators to the stock data.
+    
+    Args:
+    - stock_data: DataFrame containing historical stock data.
+    
+    Returns:
+    - DataFrame with added technical indicators.
+    """
+    # Moving Averages
+    stock_data['SMA_10'] = talib.SMA(stock_data['Adj Close'], timeperiod=10)
+    stock_data['SMA_50'] = talib.SMA(stock_data['Adj Close'], timeperiod=50)
+    stock_data['EMA_10'] = talib.EMA(stock_data['Adj Close'], timeperiod=10)
+    stock_data['EMA_50'] = talib.EMA(stock_data['Adj Close'], timeperiod=50)
+    stock_data['SMA_200'] = talib.SMA(stock_data['Adj Close'], timeperiod=200)
+    
+    # Oscillators
+    stock_data['RSI'] = talib.RSI(stock_data['Adj Close'], timeperiod=14)
+    stock_data['CCI'] = talib.CCI(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=20)
+    stock_data['Stochastic_K'], stock_data['Stochastic_D'] = talib.STOCH(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], 
+                                                                         fastk_period=14, slowk_period=3, slowd_period=3)
+    stock_data['LW_R'] = talib.WILLR(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=14)
+    macd, macdsignal, _ = talib.MACD(stock_data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+    stock_data['MACD'] = macd
+    stock_data['MACD_Signal'] = macdsignal
+
+    # Volatility and Momentum
+    stock_data['Momentum'] = stock_data['Adj Close'] - stock_data['Adj Close'].shift(14)
+    upper_band, middle_band, lower_band = talib.BBANDS(stock_data['Adj Close'], timeperiod=20)
+    stock_data['BB_Upper'] = upper_band
+    stock_data['BB_Middle'] = middle_band
+    stock_data['BB_Lower'] = lower_band
+    stock_data['ATR'] = talib.ATR(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=14)
+
+    # Volume Indicators
+    stock_data['OBV'] = talib.OBV(stock_data['Adj Close'], stock_data['Volume'])
+    stock_data['A/D_Oscillator'] = (stock_data['Adj Close'] - stock_data['Low']) - (stock_data['High'] - stock_data['Adj Close'])
+    stock_data['A/D_Oscillator'] *= stock_data['Volume']
+
+    # Drop NaN values resulting from calculations
+    stock_data.dropna(inplace=True)
+
+    # Add binary target 'Prediction' to indicate price direction
+    stock_data['Prediction'] = (stock_data['Adj Close'].shift(-1) > stock_data['Adj Close']).astype(int)
+
+    return stock_data
