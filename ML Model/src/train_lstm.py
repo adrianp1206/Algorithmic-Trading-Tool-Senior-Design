@@ -3,6 +3,7 @@ from lstm_model import build_lstm_model
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model
 
 def train_lstm_model():
@@ -73,4 +74,3 @@ def train_lstm_model():
     plt.ylabel('Price')
     plt.legend()
     plt.show()
-
