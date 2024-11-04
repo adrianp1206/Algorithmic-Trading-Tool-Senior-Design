@@ -158,52 +158,77 @@ def fetch_data_prior_to_last_month(ticker='TSLA', start_date='2008-01-01', last_
     
     return combined_data
 
-import talib
+import talib as ta
 
-def add_technical_indicators(stock_data):
+def calculate_technical_indicators(df):
     """
-    Add technical indicators to the stock data.
+    Calculate various technical indicators for stock data.
     
     Args:
-    - stock_data: DataFrame containing historical stock data.
+    df: DataFrame, The stock data.
     
     Returns:
-    - DataFrame with added technical indicators.
+    df: DataFrame, The stock data with added indicators.
     """
-    # Moving Averages
-    stock_data['SMA_10'] = talib.SMA(stock_data['Adj Close'], timeperiod=10)
-    stock_data['SMA_50'] = talib.SMA(stock_data['Adj Close'], timeperiod=50)
-    stock_data['EMA_10'] = talib.EMA(stock_data['Adj Close'], timeperiod=10)
-    stock_data['EMA_50'] = talib.EMA(stock_data['Adj Close'], timeperiod=50)
-    stock_data['SMA_200'] = talib.SMA(stock_data['Adj Close'], timeperiod=200)
-    
-    # Oscillators
-    stock_data['RSI'] = talib.RSI(stock_data['Adj Close'], timeperiod=14)
-    stock_data['CCI'] = talib.CCI(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=20)
-    stock_data['Stochastic_K'], stock_data['Stochastic_D'] = talib.STOCH(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], 
-                                                                         fastk_period=14, slowk_period=3, slowd_period=3)
-    stock_data['LW_R'] = talib.WILLR(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=14)
-    macd, macdsignal, _ = talib.MACD(stock_data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
-    stock_data['MACD'] = macd
-    stock_data['MACD_Signal'] = macdsignal
+    # Historical Prices are already in df (Open, High, Low, Close, Volume)
 
-    # Volatility and Momentum
-    stock_data['Momentum'] = stock_data['Adj Close'] - stock_data['Adj Close'].shift(14)
-    upper_band, middle_band, lower_band = talib.BBANDS(stock_data['Adj Close'], timeperiod=20)
-    stock_data['BB_Upper'] = upper_band
-    stock_data['BB_Middle'] = middle_band
-    stock_data['BB_Lower'] = lower_band
-    stock_data['ATR'] = talib.ATR(stock_data['High'], stock_data['Low'], stock_data['Adj Close'], timeperiod=14)
+    # Overlap Studies Indicators
+    df['BB_upper'], df['BB_middle'], df['BB_lower'] = ta.BBANDS(df['Close'], timeperiod=20)
+    df['DEMA'] = ta.DEMA(df['Close'], timeperiod=30)
+    df['MIDPOINT'] = ta.MIDPOINT(df['Close'], timeperiod=14)
+    df['MIDPRICE'] = ta.MIDPRICE(df['High'], df['Low'], timeperiod=14)
+    df['SMA'] = ta.SMA(df['Close'], timeperiod=30)
+    df['T3'] = ta.T3(df['Close'], timeperiod=5, vfactor=0.7)
+    df['TEMA'] = ta.TEMA(df['Close'], timeperiod=30)
+    df['TRIMA'] = ta.TRIMA(df['Close'], timeperiod=30)
+    df['WMA'] = ta.WMA(df['Close'], timeperiod=30)
+
+    # Momentum Indicators
+    df['ADX'] = ta.ADX(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['ADXR'] = ta.ADXR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['APO'] = ta.APO(df['Close'], fastperiod=12, slowperiod=26, matype=0)
+    df['AROON_DOWN'], df['AROON_UP'] = ta.AROON(df['High'], df['Low'], timeperiod=14)
+    df['AROONOSC'] = ta.AROONOSC(df['High'], df['Low'], timeperiod=14)
+    df['CCI'] = ta.CCI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['CMO'] = ta.CMO(df['Close'], timeperiod=14)
+    df['MACD'], df['MACD_signal'], df['MACD_hist'] = ta.MACD(df['Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+    df['MFI'] = ta.MFI(df['High'], df['Low'], df['Close'], df['Volume'], timeperiod=14)
+    df['MINUS_DI'] = ta.MINUS_DI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['MINUS_DM'] = ta.MINUS_DM(df['High'], df['Low'], timeperiod=14)
+    df['MOM'] = ta.MOM(df['Close'], timeperiod=10)
+    df['PLUS_DI'] = ta.PLUS_DI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['PLUS_DM'] = ta.PLUS_DM(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['ROC'] = ta.ROC(df['Close'], timeperiod=10)
+    df['RSI'] = ta.RSI(df['Close'], timeperiod=14)
+    df['STOCH_slowk'], df['STOCH_slowd'] = ta.STOCH(df['High'], df['Low'], df['Close'], 
+                                                      fastk_period=5, slowk_period=3, slowk_matype=0, 
+                                                      slowd_period=3, slowd_matype=0)
+    df['STOCH_fastk'], df['STOCH_fastd'] = ta.STOCHF(df['High'], df['Low'], df['Close'], 
+                                                     fastk_period=5, fastd_period=3, fastd_matype=0)
+    
+    # Volatility Indicators
+    df['ATR'] = ta.ATR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['NATR'] = ta.NATR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['TRANGE'] = ta.TRANGE(df['High'], df['Low'], df['Close'])
 
     # Volume Indicators
-    stock_data['OBV'] = talib.OBV(stock_data['Adj Close'], stock_data['Volume'])
-    stock_data['A/D_Oscillator'] = (stock_data['Adj Close'] - stock_data['Low']) - (stock_data['High'] - stock_data['Adj Close'])
-    stock_data['A/D_Oscillator'] *= stock_data['Volume']
+    df['AD'] = ta.AD(df['High'], df['Low'], df['Close'], df['Volume'])
+    df['ADOSC'] = ta.ADOSC(df['High'], df['Low'], df['Close'], df['Volume'], fastperiod=3, slowperiod=10)
+    df['OBV'] = ta.OBV(df['Close'], df['Volume'])
 
-    # Drop NaN values resulting from calculations
-    stock_data.dropna(inplace=True)
+    # Price Transform Indicators
+    df['AVGPRICE'] = ta.AVGPRICE(df['Open'], df['High'], df['Low'], df['Close'])
+    df['MEDPRICE'] = ta.MEDPRICE(df['High'], df['Low'])
+    df['TYPPRICE'] = ta.TYPPRICE(df['High'], df['Low'], df['Close'])
+    df['WCLPRICE'] = ta.WCLPRICE(df['High'], df['Low'], df['Close'])
 
-    # Add binary target 'Prediction' to indicate price direction
-    stock_data['Prediction'] = (stock_data['Adj Close'].shift(-1) > stock_data['Adj Close']).astype(int)
+    # Cycle Indicators
+    df['HT_DCPERIOD'] = ta.HT_DCPERIOD(df['Close'])
+    df['HT_DCPHASE'] = ta.HT_DCPHASE(df['Close'])
+    df['HT_PHASOR_inphase'], df['HT_PHASOR_quadrature'] = ta.HT_PHASOR(df['Close'])
+    df['HT_SINE'], df['HT_LEADSINE'] = ta.HT_SINE(df['Close'])
+    df['HT_TRENDMODE'] = ta.HT_TRENDMODE(df['Close'])
+    
+    return df
 
-    return stock_data
+
