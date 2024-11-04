@@ -197,7 +197,7 @@ def calculate_technical_indicators(df):
     df['MINUS_DM'] = ta.MINUS_DM(df['High'], df['Low'], timeperiod=14)
     df['MOM'] = ta.MOM(df['Close'], timeperiod=10)
     df['PLUS_DI'] = ta.PLUS_DI(df['High'], df['Low'], df['Close'], timeperiod=14)
-    df['PLUS_DM'] = ta.PLUS_DM(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['PLUS_DM'] = ta.PLUS_DM(df['High'], df['Low'], timeperiod=14)
     df['ROC'] = ta.ROC(df['Close'], timeperiod=10)
     df['RSI'] = ta.RSI(df['Close'], timeperiod=14)
     df['STOCH_slowk'], df['STOCH_slowd'] = ta.STOCH(df['High'], df['Low'], df['Close'], 
