@@ -1,5 +1,8 @@
 import pandas as pd
-
+import numpy as np
+import xgboost as xgb
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import accuracy_score
 from data_processing import fetch_tsla_data, calculate_technical_indicators
 
 def prepare_data(start_date='2008-01-01', end_date='2024-01-01'):
@@ -34,40 +37,61 @@ def prepare_data(start_date='2008-01-01', end_date='2024-01-01'):
     
     return X, y
 
-import xgboost as xgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-
-def train_xgboost(X, y, feature_subset, test_size=0.2, random_state=42):
+def train_xgboost_with_timeseries_cv(X, y, feature_subset, params=None, n_splits=5):
     """
-    Train an XGBoost model on a subset of features and evaluate its performance.
+    Train an XGBoost model using TimeSeriesSplit for cross-validation.
     
     Args:
     X: DataFrame, The complete feature set.
     y: Series or array, The target variable.
     feature_subset: List of str, The selected features to train on.
-    test_size: float, Proportion of the dataset to include in the test split.
-    random_state: int, Random seed for reproducibility.
+    params: dict, Dictionary of hyperparameters to pass to XGBClassifier.
+    n_splits: int, Number of splits for TimeSeriesSplit.
     
     Returns:
-    model: XGBClassifier, The trained XGBoost model.
-    accuracy: float, The accuracy score on the test set.
+    avg_accuracy: float, The average accuracy score across splits.
+    models: list, The trained XGBoost models for each split.
     """
-    # Subset the data with the selected features
+    # Default parameters if none provided
+    if params is None:
+        params = {
+            'learning_rate': 0.1,
+            'n_estimators': 50,
+            'max_depth': 6,
+            'min_child_weight': 3,
+            'subsample': 0.75,
+            'colsample_bytree': 0.75,
+            'random_state': 42,
+            'eval_metric': 'logloss'
+        }
+    
+    # Prepare the subset of features
     X_subset = X[feature_subset]
     
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X_subset, y, test_size=test_size, random_state=random_state)
+    # TimeSeriesSplit initialization
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    accuracies = []
+    models = []
     
-    # Set up the XGBoost model
-    model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=random_state)
+    # Time series cross-validation
+    for train_index, test_index in tscv.split(X_subset):
+        X_train, X_test = X_subset.iloc[train_index], X_subset.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        
+        # Set up the XGBoost model with parameters
+        model = xgb.XGBClassifier(**params)
+        
+        # Train the model
+        model.fit(X_train, y_train)
+        
+        # Predict and evaluate accuracy on the test set
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        accuracies.append(accuracy)
+        models.append(model)
     
-    # Train the model
-    model.fit(X_train, y_train)
+    # Calculate average accuracy across splits
+    avg_accuracy = np.mean(accuracies)
+    print(f"Average Accuracy across {n_splits} splits: {avg_accuracy:.4f}")
     
-    # Predict and evaluate accuracy on the test set
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    
-    return model, accuracy
-
+    return avg_accuracy, models
