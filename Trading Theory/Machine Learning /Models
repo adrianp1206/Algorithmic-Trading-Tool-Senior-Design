@@ -1,0 +1,48 @@
+Definition:
+A machine learning model is a system that uses algorithms to identify patterns in data and make predictions or decisions.
+It is trained on historical data to generalize insights for future predictions.
+
+1. Linear Regression
+    Use: Predicts future price or returns based on the linear relationship between input features (e.g., historical prices, volume) and the target variable (e.g., future price).
+
+2. Logistic Regression
+    Use: Predicts the probability of a binary outcome, such as whether a stock will go up or down, based on input features.
+
+3. Decision Trees
+    Use: Models decision-making by splitting data into branches based on feature values, useful for classifying market conditions or predicting price movement.
+
+4. Random Forest
+    Use: An ensemble of decision trees that reduces overfitting and increases accuracy in predictions, often used for price forecasting and trading signals.
+
+5. Support Vector Machines (SVM)
+    Use: Finds the hyperplane that best separates data into different classes (e.g., buy or sell signals), used in classification tasks for asset price direction.
+
+6. K-Nearest Neighbors (KNN)
+    Use: Predicts the price movement based on the "nearest" historical data points, useful for pattern recognition and price classification.
+
+7. Neural Networks
+    Use: Learns complex, non-linear relationships in data for predicting stock prices or generating trade signals. Common in high-frequency trading (HFT) and price prediction.
+
+8. Recurrent Neural Networks (RNN) / Long Short-Term Memory (LSTM)
+    Use: A type of neural network designed for sequential data, ideal for analyzing time series data like stock prices or market trends over time.
+
+9. Gradient Boosting Machines (GBM)
+    Use: An ensemble technique that builds multiple decision trees sequentially, optimizing the model based on previous errors, often used in price prediction.
+
+10. XGBoost (Extreme Gradient Boosting)
+    Use: A more advanced and efficient version of gradient boosting, popular for both classification (e.g., trend direction) and regression tasks (e.g., price prediction).
+
+11. Autoencoders
+    Use: A type of neural network used for unsupervised learning, often applied to reduce dimensionality or for anomaly detection in trading patterns.
+
+12. K-Means Clustering
+    Use: An unsupervised algorithm that groups assets based on similarities, useful for identifying market regimes or clustering similar stock behavior.
+
+13. Bayesian Networks
+    Use: Probabilistic models that predict future outcomes based on conditional dependencies between variables, used in risk management and asset price prediction.
+
+14. Reinforcement Learning (RL)
+    Use: A learning approach where an agent makes trading decisions to maximize cumulative rewards (e.g., profit), commonly used in algorithmic trading and portfolio optimization.
+
+15. Convolutional Neural Networks (CNN)
+    Use: Traditionally used for image recognition, CNNs are applied to trading by treating price charts or technical indicators as images to identify patterns for trading signals.

@@ -157,3 +157,78 @@ def fetch_data_prior_to_last_month(ticker='TSLA', start_date='2008-01-01', last_
     combined_data = pd.concat([stock_data, fundamentals_df], axis=1)
     
     return combined_data
+
+import talib as ta
+
+def calculate_technical_indicators(df):
+    """
+    Calculate various technical indicators for stock data.
+    
+    Args:
+    df: DataFrame, The stock data.
+    
+    Returns:
+    df: DataFrame, The stock data with added indicators.
+    """
+    # Historical Prices are already in df (Open, High, Low, Close, Volume)
+
+    # Overlap Studies Indicators
+    df['BB_upper'], df['BB_middle'], df['BB_lower'] = ta.BBANDS(df['Close'], timeperiod=20)
+    df['DEMA'] = ta.DEMA(df['Close'], timeperiod=30)
+    df['MIDPOINT'] = ta.MIDPOINT(df['Close'], timeperiod=14)
+    df['MIDPRICE'] = ta.MIDPRICE(df['High'], df['Low'], timeperiod=14)
+    df['SMA'] = ta.SMA(df['Close'], timeperiod=30)
+    df['T3'] = ta.T3(df['Close'], timeperiod=5, vfactor=0.7)
+    df['TEMA'] = ta.TEMA(df['Close'], timeperiod=30)
+    df['TRIMA'] = ta.TRIMA(df['Close'], timeperiod=30)
+    df['WMA'] = ta.WMA(df['Close'], timeperiod=30)
+
+    # Momentum Indicators
+    df['ADX'] = ta.ADX(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['ADXR'] = ta.ADXR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['APO'] = ta.APO(df['Close'], fastperiod=12, slowperiod=26, matype=0)
+    df['AROON_DOWN'], df['AROON_UP'] = ta.AROON(df['High'], df['Low'], timeperiod=14)
+    df['AROONOSC'] = ta.AROONOSC(df['High'], df['Low'], timeperiod=14)
+    df['CCI'] = ta.CCI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['CMO'] = ta.CMO(df['Close'], timeperiod=14)
+    df['MACD'], df['MACD_signal'], df['MACD_hist'] = ta.MACD(df['Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+    df['MFI'] = ta.MFI(df['High'], df['Low'], df['Close'], df['Volume'], timeperiod=14)
+    df['MINUS_DI'] = ta.MINUS_DI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['MINUS_DM'] = ta.MINUS_DM(df['High'], df['Low'], timeperiod=14)
+    df['MOM'] = ta.MOM(df['Close'], timeperiod=10)
+    df['PLUS_DI'] = ta.PLUS_DI(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['PLUS_DM'] = ta.PLUS_DM(df['High'], df['Low'], timeperiod=14)
+    df['ROC'] = ta.ROC(df['Close'], timeperiod=10)
+    df['RSI'] = ta.RSI(df['Close'], timeperiod=14)
+    df['STOCH_slowk'], df['STOCH_slowd'] = ta.STOCH(df['High'], df['Low'], df['Close'], 
+                                                      fastk_period=5, slowk_period=3, slowk_matype=0, 
+                                                      slowd_period=3, slowd_matype=0)
+    df['STOCH_fastk'], df['STOCH_fastd'] = ta.STOCHF(df['High'], df['Low'], df['Close'], 
+                                                     fastk_period=5, fastd_period=3, fastd_matype=0)
+    
+    # Volatility Indicators
+    df['ATR'] = ta.ATR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['NATR'] = ta.NATR(df['High'], df['Low'], df['Close'], timeperiod=14)
+    df['TRANGE'] = ta.TRANGE(df['High'], df['Low'], df['Close'])
+
+    # Volume Indicators
+    df['AD'] = ta.AD(df['High'], df['Low'], df['Close'], df['Volume'])
+    df['ADOSC'] = ta.ADOSC(df['High'], df['Low'], df['Close'], df['Volume'], fastperiod=3, slowperiod=10)
+    df['OBV'] = ta.OBV(df['Close'], df['Volume'])
+
+    # Price Transform Indicators
+    df['AVGPRICE'] = ta.AVGPRICE(df['Open'], df['High'], df['Low'], df['Close'])
+    df['MEDPRICE'] = ta.MEDPRICE(df['High'], df['Low'])
+    df['TYPPRICE'] = ta.TYPPRICE(df['High'], df['Low'], df['Close'])
+    df['WCLPRICE'] = ta.WCLPRICE(df['High'], df['Low'], df['Close'])
+
+    # Cycle Indicators
+    df['HT_DCPERIOD'] = ta.HT_DCPERIOD(df['Close'])
+    df['HT_DCPHASE'] = ta.HT_DCPHASE(df['Close'])
+    df['HT_PHASOR_inphase'], df['HT_PHASOR_quadrature'] = ta.HT_PHASOR(df['Close'])
+    df['HT_SINE'], df['HT_LEADSINE'] = ta.HT_SINE(df['Close'])
+    df['HT_TRENDMODE'] = ta.HT_TRENDMODE(df['Close'])
+    
+    return df
+
+

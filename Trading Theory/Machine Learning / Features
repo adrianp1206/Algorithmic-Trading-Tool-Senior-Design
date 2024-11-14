@@ -1,0 +1,47 @@
+Defintion:
+Refer to individual measurable properties or characteristics used as input to train models. They are the variables or attributes
+that represent patterns or information in the data and are critical for making predictions or classifications.
+
+1. Price Movements (Returns):
+    Definition: The percentage change in price over a specific period (e.g., daily, weekly, monthly returns).
+    Use: Captures the trend and momentum of a stock, helping predict future price direction.
+
+2. Moving Averages:
+    Definition: The average price of a security over a set time period (e.g., 50-day or 200-day moving average).
+    Use: Common in trend-following strategies; indicates the general direction of the market over short or long terms.
+
+3. Relative Strength Index (RSI):
+    Definition: A momentum oscillator that measures the speed and change of price movements on a scale from 0 to 100.
+    Use: Signals overbought or oversold conditions; values above 70 indicate overbought, while below 30 indicate oversold.
+
+4. Bollinger Bands:
+    Definition: A volatility indicator that consists of a moving average and two standard deviation bands above and below the moving average.
+    Use: Helps in identifying potential reversal points when price moves outside of the bands.
+
+5. Trading Volume:
+    Definition: The number of shares traded during a specific time period.
+    Use: High volume can indicate strong interest in a stock and often precedes price movement; it's also used to confirm trends or reversals.
+
+6. Volatility (e.g., Historical or Implied Volatility):
+    Definition: A measure of price fluctuation over a certain period, calculated either historically or implied from option prices.
+    Use: Higher volatility often signals larger price swings and can indicate risk or opportunity.
+
+7. Price-to-Earnings Ratio (P/E Ratio):
+    Definition: The ratio of a company's share price to its earnings per share (EPS).
+    Use: A fundamental feature that can help identify overvalued or undervalued stocks; often used in value investing.
+
+8. Market Sentiment:
+    Definition: A score derived from analyzing news articles, social media, or analyst opinions to gauge overall market mood.
+    Use: Quantifies market sentiment (bullish or bearish) and helps forecast potential market shifts.
+
+9. Economic Indicators:
+    Definition: Macroeconomic factors such as GDP growth, interest rates, unemployment rates, or inflation figures.
+    Use: These factors can influence asset prices and overall market direction, making them useful in predicting market trends.
+
+10. Order Book Data:
+    Definition: Real-time data showing buy and sell orders for an asset at various price levels.
+    Use: Analyzing the order book provides insights into market supply and demand, helping to detect short-term price pressure or liquidity imbalances.
+
+11. P-Ratio:
+    Definition: The proportion of stocks within the Dow 30 that are trading above a certain benchmark or threshold (such as their moving average or a key price level).
+    Use: Helps gauge overall market strength or sentiment by indicating how many stocks in the index are performing well relative to the chosen metric.
