@@ -1,62 +1,45 @@
-import pandas as pd
-import numpy as np
 import xgboost as xgb
+import numpy as np
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.metrics import accuracy_score
-from data_processing import fetch_tsla_data, calculate_technical_indicators
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+)
+from joblib import dump
+from data_processing import fetch_stock_data, calculate_technical_indicators
 
-def prepare_data(start_date='2008-01-01', end_date='2024-01-01'):
+def train_xgboost(
+    ticker,
+    start_date='2008-01-01',
+    end_date='2021-12-31',
+    feature_subset=None,
+    n_splits=5,
+    params=None,
+    save_model=True
+):
     """
-    Prepare the feature matrix X and target variable y for model training.
-    
-    Args:
-    start_date: str, The start date for fetching data.
-    end_date: str, The end date for fetching data.
-    
-    Returns:
-    X: DataFrame, Feature matrix containing technical indicators.
-    y: Series, Target variable representing stock price movement (1 for up, 0 for down).
-    """
-    # Step 1: Fetch the historical stock data
-    df = fetch_tsla_data(start_date, end_date)
-    
-    # Step 2: Add technical indicators
-    df = calculate_technical_indicators(df)
-    
-    # Step 3: Define the target variable y
-    # Here we assume we want to predict if the price goes up (1) or down (0)
-    df['Price_Change'] = df['Close'].diff()  # Calculate daily price change
-    df['Target'] = (df['Price_Change'] > 0).astype(int)  # 1 if up, 0 if down
-    
-    # Drop the first row because diff() will produce NaN for the first day
-    df = df.dropna().reset_index(drop=True)
-    
-    # Step 4: Prepare the feature matrix X
-    X = df.drop(columns=['Price_Change', 'Target'])  # Drop non-feature columns
-    y = df['Target']  # Target variable
-    
-    return X, y
+    Train an XGBoost model using TimeSeriesSplit for a given stock ticker.
 
-def train_xgboost_with_timeseries_cv(X, y, feature_subset, params=None, n_splits=5):
-    """
-    Train an XGBoost model using TimeSeriesSplit for cross-validation.
-    
     Args:
-    X: DataFrame, The complete feature set.
-    y: Series or array, The target variable.
-    feature_subset: List of str, The selected features to train on.
-    params: dict, Dictionary of hyperparameters to pass to XGBClassifier.
+    ticker: str, The stock ticker symbol.
+    start_date: str, Start date for training data.
+    end_date: str, End date for training data.
+    feature_subset: list of str, The selected features to use for training.
     n_splits: int, Number of splits for TimeSeriesSplit.
-    
+    params: dict, Hyperparameters for XGBoost.
+    save_model: bool, If True, save the final model.
+
     Returns:
-    avg_accuracy: float, The average accuracy score across splits.
-    models: list, The trained XGBoost models for each split.
+    metrics: dict, Performance metrics across splits.
+    model: Trained XGBoost model.
     """
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
     # Default parameters if none provided
     if params is None:
         params = {
             'learning_rate': 0.1,
-            'n_estimators': 50,
+            'n_estimators': 100,
             'max_depth': 6,
             'min_child_weight': 3,
             'subsample': 0.75,
@@ -65,33 +48,63 @@ def train_xgboost_with_timeseries_cv(X, y, feature_subset, params=None, n_splits
             'eval_metric': 'logloss'
         }
     
-    # Prepare the subset of features
-    X_subset = X[feature_subset]
-    
-    # TimeSeriesSplit initialization
+    # Fetch and preprocess data
+    data = fetch_stock_data(ticker, start_date=start_date, end_date=end_date)
+    data = calculate_technical_indicators(data)
+    data['Price_Change'] = data['Close'].diff()
+    data['Target'] = (data['Price_Change'] > 0).astype(int)
+    data = data.dropna()
+
+    X = data[feature_subset] if feature_subset else data.drop(columns=['Price_Change', 'Target'])
+    y = data['Target']
+
+    # Initialize TimeSeriesSplit
     tscv = TimeSeriesSplit(n_splits=n_splits)
-    accuracies = []
+    
+    # Metrics
+    accuracy_list = []
+    precision_list = []
+    recall_list = []
+    f1_list = []
+    roc_auc_list = []
     models = []
-    
-    # Time series cross-validation
-    for train_index, test_index in tscv.split(X_subset):
-        X_train, X_test = X_subset.iloc[train_index], X_subset.iloc[test_index]
+
+    # Train and evaluate across splits
+    for train_index, test_index in tscv.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        
-        # Set up the XGBoost model with parameters
+
         model = xgb.XGBClassifier(**params)
-        
-        # Train the model
         model.fit(X_train, y_train)
-        
-        # Predict and evaluate accuracy on the test set
+
         y_pred = model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        accuracies.append(accuracy)
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+
+        accuracy_list.append(accuracy_score(y_test, y_pred))
+        precision_list.append(precision_score(y_test, y_pred, zero_division=0))
+        recall_list.append(recall_score(y_test, y_pred))
+        f1_list.append(f1_score(y_test, y_pred))
+        roc_auc_list.append(roc_auc_score(y_test, y_pred_proba))
         models.append(model)
-    
-    # Calculate average accuracy across splits
-    avg_accuracy = np.mean(accuracies)
-    print(f"Average Accuracy across {n_splits} splits: {avg_accuracy:.4f}")
-    
-    return avg_accuracy, models
+
+    metrics = {
+        'accuracy': np.mean(accuracy_list),
+        'precision': np.mean(precision_list),
+        'recall': np.mean(recall_list),
+        'f1_score': np.mean(f1_list),
+        'roc_auc': np.mean(roc_auc_list),
+    }
+
+    # Save the model if flag is True
+    if save_model:
+        model_filename = f"xgboost_{ticker}.joblib"
+        dump(models[-1], model_filename)
+        print(f"Model saved to {model_filename}")
+
+        # Display confusion matrix for the final split
+        cm = confusion_matrix(y_test, y_pred)
+        ConfusionMatrixDisplay(cm, display_labels=["Down", "Up"]).plot(cmap="Blues")
+        plt.title(f"Confusion Matrix for {ticker}")
+        plt.show()
+
+    return metrics, models[-1]

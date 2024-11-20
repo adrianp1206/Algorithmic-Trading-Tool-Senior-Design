@@ -18,14 +18,14 @@ class StockPredictionEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
         
         # Action space for weighting LSTM, XGBoost, and NLP predictions
-        self.action_space = spaces.Box(low=0, high=1, shape=(3,), dtype=np.float32)  # Assuming 3 weights
+        self.action_space = spaces.Box(low=0, high=1, shape=(3,), dtype=np.float32)
 
         self.current_step = 0
 
     def _get_state(self):
         lstm_prediction = self.lstm_model.predict(self.historical_data[self.current_step])
         xgboost_prediction = self.xgboost_model.predict(self.historical_data[self.current_step])
-        nlp_sentiment = self.nlp_model.get_sentiment_score()  # Assuming this function is defined in nlp_model
+        nlp_sentiment = self.nlp_model.get_sentiment_score() 
         
         # Technical indicators
         volatility = calculate_volatility(self.historical_data[:self.current_step + 1])
