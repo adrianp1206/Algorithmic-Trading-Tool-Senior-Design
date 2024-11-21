@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd 
 import os
 
-def fetch_tsla_data(start_date='2015-01-01', end_date='2024-01-01'):
+def fetch_stock_data(ticker,start_date='2015-01-01', end_date='2024-01-01'):
     """
     Fetch historical stock data for TSLA from Yahoo Finance.
     
@@ -13,24 +13,22 @@ def fetch_tsla_data(start_date='2015-01-01', end_date='2024-01-01'):
     Returns:
     tsla_data: DataFrame, The historical stock data for TSLA.
     """
-    tsla_data = yf.download('TSLA', start='2008-01-01', end='2021-12-31')
+    stock_data = yf.download(ticker, start=start_date, end=end_date)
     
-    # Fetch additional fundamental data
-    tsla = yf.Ticker('TSLA')
+    stock = yf.Ticker(ticker)
     fundamentals = {
-        "DE Ratio": tsla.info.get("debtToEquity"),
-        "Return on Equity": tsla.info.get("returnOnEquity"),
-        "Price/Book": tsla.info.get("priceToBook"),
-        "Profit Margin": tsla.info.get("profitMargins"),
-        "Diluted EPS": tsla.info.get("trailingEps"),
-        "Beta": tsla.info.get("beta")
+        "DE Ratio": stock.info.get("debtToEquity"),
+        "Return on Equity": stock.info.get("returnOnEquity"),
+        "Price/Book": stock.info.get("priceToBook"),
+        "Profit Margin": stock.info.get("profitMargins"),
+        "Diluted EPS": stock.info.get("trailingEps"),
+        "Beta": stock.info.get("beta")
     }
 
-    # Add fundamentals as static values for the whole period if no historical data is available
     for key, value in fundamentals.items():
-        tsla_data[key] = value
+        stock_data[key] = value
 
-    return tsla_data
+    return stock_data
 
 def calculate_technical_indicators(df):
     """
@@ -110,10 +108,8 @@ def fetch_data_up_to_last_week(ticker='TSLA', start_date='2023-01-01', end_date=
         'Beta': ticker_info.info.get('beta', None)
     }
     
-    # Create a DataFrame with the fundamental data and repeat it for each date
     fundamentals_df = pd.DataFrame([fundamentals] * len(stock_data), index=stock_data.index)
     
-    # Merge stock price data with fundamental data
     combined_data = pd.concat([stock_data, fundamentals_df], axis=1)
     
     return combined_data
