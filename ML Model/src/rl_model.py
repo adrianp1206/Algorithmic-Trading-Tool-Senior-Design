@@ -25,7 +25,7 @@ class StockPredictionEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-np.inf,
             high=np.inf,
-            shape=(6,),  # Matches the state vector size
+            shape=(7,),  # Matches the state vector size
             dtype=np.float32
         )
 
@@ -39,17 +39,32 @@ class StockPredictionEnv(gym.Env):
 
     def _get_state(self):
         if self.current_step < 20:
-            state = np.zeros(6)  # Matches the state vector size
+            state = np.zeros(7)  # Matches the state vector size
             return state # Add 4 for other indicators like cash/position
 
         # LSTM Prediction (raw time-series data)
         X_lstm = self.historical_data['Close'].iloc[self.current_step - 19:self.current_step + 1].values
-        X_lstm = X_lstm.reshape(1, 20, 1)
+        X_lstm = X_lstm.reshape(1, 20, -1)
         lstm_prediction = self.lstm_model.predict(X_lstm)[0][0]
 
         # XGBoost Prediction (dynamic feature set)
         X_xgboost = self.historical_data[self.features].iloc[self.current_step].values.reshape(1, -1)
         xgboost_prediction = self.xgboost_model.predict(X_xgboost)[0]
+
+        lstm_rolling_accuracy = calculate_rolling_accuracy(
+            self.lstm_model,
+            self.historical_data,
+            ['Close'],  # Feature(s) used for LSTM (adjust if more features are used)
+            self.current_step
+        )
+
+    # Rolling accuracy for XGBoost
+        xgboost_rolling_accuracy = calculate_rolling_accuracy(
+            self.xgboost_model,
+            self.historical_data,
+            self.features,  # Feature(s) used for XGBoost
+            self.current_step
+        )
 
         # Additional indicators
         volatility = calculate_volatility(self.historical_data['Close'][:self.current_step + 1])
@@ -62,11 +77,10 @@ class StockPredictionEnv(gym.Env):
             volatility,
             trend_slope,
             self.cash,
-            self.position
+            self.position,
+            (lstm_rolling_accuracy + xgboost_rolling_accuracy) / 2 
         ])
 
-        rolling_return = (self.historical_data['Close'].iloc[self.current_step] - self.historical_data['Close'].iloc[self.current_step - 5]) / self.historical_data['Close'].iloc[self.current_step - 5]
-        state = np.append(state, rolling_return)
         return state
 
     def reset(self):
@@ -180,3 +194,16 @@ def calculate_rolling_accuracy(model, historical_data, features, step, window=20
     y_window = historical_data['Target'].iloc[step - window:step].values
     predictions = model.predict(X_window)
     return np.mean(predictions == y_window)
+
+def add_target_column(data):
+    """
+    Adds a 'Target' column to indicate the price movement direction.
+
+    Args:
+    data: pd.DataFrame, historical stock data.
+
+    Returns:
+    pd.DataFrame, updated data with 'Target' column.
+    """
+    data['Target'] = (data['Close'].shift(-1) > data['Close']).astype(int)
+    return data

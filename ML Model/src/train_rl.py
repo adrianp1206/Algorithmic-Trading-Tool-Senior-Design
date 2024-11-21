@@ -3,7 +3,7 @@ from tensorflow.keras.models import load_model
 from joblib import load
 import numpy as np
 from stable_baselines3 import PPO
-from rl_model import StockPredictionEnv
+from rl_model import StockPredictionEnv, add_target_column
 from data_processing import fetch_stock_data, calculate_technical_indicators
 from lstm_model import Attention
 
@@ -55,6 +55,7 @@ def train_rl(ticker, lstm_model_path, xgboost_model_path, start_date, end_date, 
     # Fetch historical data and calculate technical indicators
     historical_data = fetch_stock_data(ticker, start_date, end_date)
     historical_data = calculate_technical_indicators(historical_data)
+    historical_data = add_target_column(historical_data)
 
     # Initialize environment
     env = StockPredictionEnv(
