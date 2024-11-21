@@ -15,7 +15,6 @@ def fetch_stock_data(ticker,start_date='2015-01-01', end_date='2024-01-01'):
     """
     stock_data = yf.download(ticker, start=start_date, end=end_date)
     
-    # Fetch additional fundamental data
     stock = yf.Ticker(ticker)
     fundamentals = {
         "DE Ratio": stock.info.get("debtToEquity"),
@@ -26,7 +25,6 @@ def fetch_stock_data(ticker,start_date='2015-01-01', end_date='2024-01-01'):
         "Beta": stock.info.get("beta")
     }
 
-    # Add fundamentals as static values for the whole period if no historical data is available
     for key, value in fundamentals.items():
         stock_data[key] = value
 
@@ -110,10 +108,8 @@ def fetch_data_up_to_last_week(ticker='TSLA', start_date='2023-01-01', end_date=
         'Beta': ticker_info.info.get('beta', None)
     }
     
-    # Create a DataFrame with the fundamental data and repeat it for each date
     fundamentals_df = pd.DataFrame([fundamentals] * len(stock_data), index=stock_data.index)
     
-    # Merge stock price data with fundamental data
     combined_data = pd.concat([stock_data, fundamentals_df], axis=1)
     
     return combined_data

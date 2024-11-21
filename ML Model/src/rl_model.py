@@ -65,6 +65,8 @@ class StockPredictionEnv(gym.Env):
             self.position
         ])
 
+        rolling_return = (self.historical_data['Close'].iloc[self.current_step] - self.historical_data['Close'].iloc[self.current_step - 5]) / self.historical_data['Close'].iloc[self.current_step - 5]
+        state = np.append(state, rolling_return)
         return state
 
     def reset(self):
@@ -101,8 +103,21 @@ class StockPredictionEnv(gym.Env):
             self.position -= 1
             self.cash += current_price
 
-        # Reward is the profit/loss for the next day's price change
-        reward = (next_price - current_price) * self.position
+        # Calculate profit/loss for this step
+        profit_loss = (next_price - current_price) * self.position
+
+        # Add rewards for closing profitable positions
+        if self.position == 0 and profit_loss > 0:
+            reward = profit_loss / current_price + 0.01  # Bonus for profitable exits
+        else:
+            reward = profit_loss / current_price
+
+        # Add penalties for holding losing positions
+        if profit_loss < 0:
+            reward += -0.01 * abs(self.position)  # Penalty for holding losses
+
+        # Normalize the reward
+        reward = np.clip(reward, -10, 10)  # Avoid extreme reward values
 
         # Move to the next step
         self.current_step += 1
@@ -110,6 +125,7 @@ class StockPredictionEnv(gym.Env):
         next_state = self._get_state() if not done else None
 
         return next_state, reward, done, {}
+
 
 def calculate_volatility(prices, window=20):
     """

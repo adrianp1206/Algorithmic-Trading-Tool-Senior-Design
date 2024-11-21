@@ -64,13 +64,31 @@ def train_rl(ticker, lstm_model_path, xgboost_model_path, start_date, end_date, 
         features=features  # Pass the stock-specific features here
     )
 
+    # **Test Environment with Random Actions**
+    print("\nTesting environment with random actions...")
+    obs = env.reset()
+    done = False
+    total_reward = 0
+    action_counts = {0: 0, 1: 0}  # Track action distribution
+
+    while not done:
+        action = env.action_space.sample()  # Take a random action
+        action_counts[action] += 1
+        obs, reward, done, _ = env.step(action)
+        total_reward += reward
+
+    print(f"Total Reward for Random Actions: {total_reward}")
+    print(f"Action Distribution (Random): {action_counts}")
+
     # Train PPO model
+    print("\nTraining RL model...")
     ppo_model = PPO("MlpPolicy", env, verbose=1)
     ppo_model.learn(total_timesteps=total_timesteps)
 
     # Save the trained PPO model
     ppo_model.save(save_path)
 
+    # Evaluate the trained model
     print("\nEvaluating the RL model...")
     metrics = evaluate_rl_model(env, ppo_model, n_episodes=10)
 

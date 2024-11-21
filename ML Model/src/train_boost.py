@@ -16,22 +16,6 @@ def train_xgboost(
     params=None,
     save_model=True
 ):
-    """
-    Train an XGBoost model using TimeSeriesSplit for a given stock ticker.
-
-    Args:
-    ticker: str, The stock ticker symbol.
-    start_date: str, Start date for training data.
-    end_date: str, End date for training data.
-    feature_subset: list of str, The selected features to use for training.
-    n_splits: int, Number of splits for TimeSeriesSplit.
-    params: dict, Hyperparameters for XGBoost.
-    save_model: bool, If True, save the final model.
-
-    Returns:
-    metrics: dict, Performance metrics across splits.
-    model: Trained XGBoost model.
-    """
     import matplotlib.pyplot as plt
     from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
@@ -48,7 +32,6 @@ def train_xgboost(
             'eval_metric': 'logloss'
         }
     
-    # Fetch and preprocess data
     data = fetch_stock_data(ticker, start_date=start_date, end_date=end_date)
     data = calculate_technical_indicators(data)
     data['Price_Change'] = data['Close'].diff()
@@ -58,10 +41,8 @@ def train_xgboost(
     X = data[feature_subset] if feature_subset else data.drop(columns=['Price_Change', 'Target'])
     y = data['Target']
 
-    # Initialize TimeSeriesSplit
     tscv = TimeSeriesSplit(n_splits=n_splits)
     
-    # Metrics
     accuracy_list = []
     precision_list = []
     recall_list = []
@@ -69,7 +50,6 @@ def train_xgboost(
     roc_auc_list = []
     models = []
 
-    # Train and evaluate across splits
     for train_index, test_index in tscv.split(X):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
@@ -95,13 +75,11 @@ def train_xgboost(
         'roc_auc': np.mean(roc_auc_list),
     }
 
-    # Save the model if flag is True
     if save_model:
         model_filename = f"xgboost_{ticker}.joblib"
         dump(models[-1], model_filename)
         print(f"Model saved to {model_filename}")
 
-        # Display confusion matrix for the final split
         cm = confusion_matrix(y_test, y_pred)
         ConfusionMatrixDisplay(cm, display_labels=["Down", "Up"]).plot(cmap="Blues")
         plt.title(f"Confusion Matrix for {ticker}")
