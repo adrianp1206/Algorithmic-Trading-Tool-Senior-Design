@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+from datetime import datetime, timedelta
 
 from fetch_news import fetch_articles, extract_text
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -45,7 +46,8 @@ def generate_sentiment_df(ticker, start_date, end_date):
     """
 
     # 1) Fetch articles
-    articles = fetch_articles(ticker, start_date, end_date)  # returns a list of article dicts
+    articles = fetch_articles(ticker, start_date, end_date)
+    print(articles)  # returns a list of article dicts
 
     # 2) Build a list of dicts containing text + metadata
     records = []
@@ -85,16 +87,111 @@ def generate_sentiment_df(ticker, start_date, end_date):
 # Optional: If you want a separate function to produce a daily average:
 def generate_daily_sentiment(ticker, start_date, end_date):
     """
-    Same as above, but returns a DataFrame of daily average sentiment_score.
-    Columns: [date, avg_sentiment]
+    Fetch articles, compute daily average sentiment, then calculate a 5-day rolling average.
+    Returns a DataFrame with columns: [Date, avg_sentiment]
     """
+    # Fetch all sentiment data for the given period
     df_full = generate_sentiment_df(ticker, start_date, end_date)
-    # Create a column for date only
-    df_full['date'] = df_full['published_date'].dt.date
+    
+    # Debug: Print out the raw fetched data to check date range
+    print("Fetched articles (raw):")
+    print(df_full[['published_date', 'sentiment_score']].head(10))
+    
+    # Convert published_date to a date-only column
+    df_full['Date'] = pd.to_datetime(df_full['published_date'], errors='coerce').dt.date
 
-    df_daily = (df_full.groupby('date')['sentiment_score']
-                .mean()
-                .reset_index()
-                .rename(columns={'sentiment_score': 'avg_sentiment'}))
+    # Compute the daily average sentiment score from all articles on that day
+    df_daily = (
+        df_full.groupby('Date')['sentiment_score']
+        .mean()
+        .reset_index()
+        .rename(columns={'sentiment_score': 'daily_sentiment'})
+    )
+    
+    # Convert 'Date' back to datetime for proper sorting and rolling window calculations
+    df_daily['Date'] = pd.to_datetime(df_daily['Date'])
+    df_daily.sort_values('Date', inplace=True)
+    
+    # Calculate a rolling average over the last 5 days (including the current day)
+    df_daily['avg_sentiment'] = df_daily['daily_sentiment'].rolling(window=5, min_periods=1).mean()
+    
+    # Return only the Date and the computed rolling average
+    return df_daily[['Date', 'avg_sentiment']]
 
-    return df_daily
+
+def generate_next_day_rolling_sentiments(ticker, start_date, end_date, window=5):
+    """
+    Generate a DataFrame where for each day (starting when a full window is available)
+    the "next_day_sentiment" is computed as the average of the raw daily sentiment scores
+    from the previous `window` days.
+    
+    For example:
+      - If January 1–5 have raw sentiment values that average to 0.75, then January 6's
+        next_day_sentiment will be 0.75.
+      - January 7's next_day_sentiment will be the average of January 2–6 (using the raw data,
+        not any rolling average that was computed for January 6).
+    
+    Parameters:
+      ticker: Stock ticker symbol.
+      start_date: Start date as a string in 'YYYY-MM-DD' format.
+      end_date: End date as a string in 'YYYY-MM-DD' format.
+      window: Number of days to use for computing the next day sentiment (default is 5).
+      
+    Returns:
+      A DataFrame with columns [Date, next_day_sentiment].
+    """
+    # Fetch all articles for the period
+    articles = fetch_articles(ticker, start_date, end_date)
+    
+    records = []
+    for article in articles:
+        published_utc = article.get('published_utc', '')
+        try:
+            pub_date = pd.to_datetime(published_utc).date()
+        except Exception:
+            continue
+        
+        title = article.get('title', '')
+        description = article.get('description', '')
+        text = f"{title} {description}"
+        sentiment_data = analyze_text_finbert(text)
+        score = sentiment_data.get('sentiment_score', 0)
+        
+        records.append({
+            'published_date': pub_date,
+            'sentiment_score': score
+        })
+    
+    if not records:
+        print("No articles found in this period.")
+        return None
+
+    # Create a DataFrame with raw daily sentiment values (averaging all articles for each day)
+    df = pd.DataFrame(records)
+    daily_sentiment = (
+        df.groupby('published_date')['sentiment_score']
+          .mean()
+          .reset_index()
+          .rename(columns={'published_date': 'Date', 'sentiment_score': 'daily_sentiment'})
+    )
+    daily_sentiment['Date'] = pd.to_datetime(daily_sentiment['Date'])
+    
+    # Create a complete date range DataFrame
+    full_dates = pd.DataFrame({
+        'Date': pd.date_range(start=start_date, end=end_date)
+    })
+    
+    # Merge to ensure every day in the range is present (fill days with no articles with 0)
+    merged = full_dates.merge(daily_sentiment, on='Date', how='left')
+    merged['daily_sentiment'] = merged['daily_sentiment'].fillna(0)
+    
+    # Compute a rolling average on the raw daily sentiment with the specified window.
+    # This rolling average gives the average over a block of 5 days.
+    # Then shift it forward by 1 day so that for day T, we use the previous 5 days (T-5 to T-1).
+    merged['next_day_sentiment'] = merged['daily_sentiment'] \
+        .rolling(window=window, min_periods=window).mean().shift(1)
+    
+    # Drop rows where we don't have a full 5-day history
+    result = merged.dropna(subset=['next_day_sentiment']).reset_index(drop=True)
+    
+    return result[['Date', 'next_day_sentiment']]
