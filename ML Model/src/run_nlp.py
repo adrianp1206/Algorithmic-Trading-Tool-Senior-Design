@@ -1,8 +1,9 @@
 import torch
 import pandas as pd
 from datetime import datetime, timedelta
+import numpy as np
 
-from fetch_news import fetch_articles, extract_text
+from fetch_news import fetch_articles_polygon, extract_text
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # Load FinBERT model & tokenizer once at import time
@@ -46,7 +47,7 @@ def generate_sentiment_df(ticker, start_date, end_date):
     """
 
     # 1) Fetch articles
-    articles = fetch_articles(ticker, start_date, end_date)
+    articles = fetch_articles_polygon(ticker, start_date, end_date)
     print(articles)  # returns a list of article dicts
 
     # 2) Build a list of dicts containing text + metadata
@@ -141,7 +142,7 @@ def generate_next_day_rolling_sentiments(ticker, start_date, end_date, window=5)
       A DataFrame with columns [Date, next_day_sentiment].
     """
     # Fetch all articles for the period
-    articles = fetch_articles(ticker, start_date, end_date)
+    articles = fetch_articles_polygon(ticker, start_date, end_date)
     
     records = []
     for article in articles:
@@ -192,6 +193,87 @@ def generate_next_day_rolling_sentiments(ticker, start_date, end_date, window=5)
         .rolling(window=window, min_periods=window).mean().shift(1)
     
     # Drop rows where we don't have a full 5-day history
+    result = merged.dropna(subset=['next_day_sentiment']).reset_index(drop=True)
+    
+    return result[['Date', 'next_day_sentiment']]
+
+def generate_next_day_weighted_rolling_sentiments(ticker, start_date, end_date, window=5):
+    """
+    Generate a DataFrame where for each day (starting when a full window is available)
+    the "next_day_sentiment" is computed as the weighted average of the raw daily sentiment scores
+    from the previous `window` days, with more recent days weighted more heavily.
+    
+    For example:
+      - If January 1–5 have raw sentiment values and using weights [1, 2, 3, 4, 5],
+        then January 6's next_day_sentiment will be the weighted average of January 1–5.
+      - January 7's next_day_sentiment will be computed using a weighted average of January 2–6.
+    
+    Parameters:
+      ticker: Stock ticker symbol.
+      start_date: Start date as a string in 'YYYY-MM-DD' format.
+      end_date: End date as a string in 'YYYY-MM-DD' format.
+      window: Number of days to use for computing the next day sentiment (default is 5).
+      
+    Returns:
+      A DataFrame with columns [Date, next_day_sentiment].
+    """
+    # Fetch all articles for the period
+    articles = fetch_articles_polygon(ticker, start_date, end_date)
+    
+    records = []
+    for article in articles:
+        published_utc = article.get('published_utc', '')
+        try:
+            pub_date = pd.to_datetime(published_utc).date()
+        except Exception:
+            continue
+        
+        title = article.get('title', '')
+        description = article.get('description', '')
+        text = f"{title} {description}"
+        sentiment_data = analyze_text_finbert(text)
+        score = sentiment_data.get('sentiment_score', 0)
+        
+        records.append({
+            'published_date': pub_date,
+            'sentiment_score': score
+        })
+    
+    if not records:
+        print("No articles found in this period.")
+        return None
+
+    # Create a DataFrame with raw daily sentiment values (averaging all articles for each day)
+    df = pd.DataFrame(records)
+    daily_sentiment = (
+        df.groupby('published_date')['sentiment_score']
+          .mean()
+          .reset_index()
+          .rename(columns={'published_date': 'Date', 'sentiment_score': 'daily_sentiment'})
+    )
+    daily_sentiment['Date'] = pd.to_datetime(daily_sentiment['Date'])
+    
+    # Create a complete date range DataFrame
+    full_dates = pd.DataFrame({
+        'Date': pd.date_range(start=start_date, end=end_date)
+    })
+    
+    # Merge to ensure every day in the range is present (fill days with no articles with 0)
+    merged = full_dates.merge(daily_sentiment, on='Date', how='left')
+    merged['daily_sentiment'] = merged['daily_sentiment'].fillna(0)
+    
+    # Define weights: for a window of 5, weights = [1, 2, 3, 4, 5]
+    weights = np.arange(1, window + 1)
+    
+    # Compute the weighted rolling average and shift by one day.
+    # For each rolling window, compute the weighted average:
+    # weighted_avg = (sum of sentiment * weight) / (sum of weights)
+    merged['next_day_sentiment'] = merged['daily_sentiment'] \
+        .rolling(window=window, min_periods=window) \
+        .apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True) \
+        .shift(1)
+    
+    # Drop rows where we don't have a full window history
     result = merged.dropna(subset=['next_day_sentiment']).reset_index(drop=True)
     
     return result[['Date', 'next_day_sentiment']]
