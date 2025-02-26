@@ -43,18 +43,6 @@ def fetch_stock_data(ticker, start_date='2015-01-01', end_date='2024-01-01', ret
     
     raise Exception("Failed to fetch data after multiple attempts.")
 
-def calculate_technical_indicators(df):
-    """
-    Calculate common technical indicators using TA-Lib.
-    
-    Args:
-    df: DataFrame, The stock data.
-    
-    Returns:
-    df: DataFrame, The stock data with added indicators.
-    """
-    return df
-
 def save_data_to_csv(df, filename='tsla_data.csv'):
     """
     Save the stock data to a CSV file.

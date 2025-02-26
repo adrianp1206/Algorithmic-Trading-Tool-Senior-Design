@@ -83,3 +83,88 @@ def xgboost_inference_df(
     # 9. Return the final DataFrame
     return df_predictions
 
+import pandas as pd
+import numpy as np
+from joblib import load  # or use pickle if that's what you use to save your model
+
+def xgboost_inference_df_from_csv(
+    file_path,
+    model_path,
+    start_date='2008-01-01',
+    end_date='2022-12-31',
+    feature_subset=None
+):
+    """
+    Generate a DataFrame of XGBoost predictions for a stock from a local CSV file 
+    across a specified date range.
+    
+    Assumes the CSV file has extra header rows like:
+        Price,Close,High,Low,Open,Volume
+        Ticker,TSLA,TSLA,TSLA,TSLA,TSLA
+        Date,,,,,
+        2010-06-29,1.59,...,281494500
+        ...
+    Adjust skiprows and column names in pd.read_csv if needed.
+    
+    Returns
+    -------
+    df_predictions : pd.DataFrame
+        Columns: [Date, Close, XGB_Pred, XGB_Prob_Up (if available)]
+    """
+    # 1. Read the CSV file from disk.
+    # Adjust skiprows and column names based on your CSV's structure.
+    df_raw = pd.read_csv(
+        file_path,
+        skiprows=3,  # skip extra header rows if needed
+        header=None,
+        names=["Date", "Close", "High", "Low", "Open", "Volume"],
+        parse_dates=["Date"]
+    )
+    df_raw.set_index("Date", inplace=True)
+    
+    # 2. Filter data by the date range.
+    df_raw = df_raw.loc[start_date:end_date]
+    
+    # 3. Calculate technical indicators (or other feature engineering).
+    # Ensure calculate_technical_indicators returns all the features your model expects.
+    df_features = calculate_technical_indicators(df_raw)
+
+    print("CALCULATED TECHNICALS")
+    
+    # 4. Define the subset of features.
+    if feature_subset is None:
+        # Exclude columns that are not used as features.
+        exclude_cols = ['Price_Change', 'Target', 'Date']  # adjust as needed
+        feature_subset = [col for col in df_features.columns if col not in exclude_cols]
+    
+    # 5. Drop rows with NaN values in the required feature columns.
+    df_features = df_features.dropna(subset=feature_subset)
+    valid_index = df_features.index
+    
+    # 6. Create the input matrix for inference.
+    X_inference = df_features[feature_subset]
+    
+    # 7. Load your trained XGBoost model.
+    xgb_model = load(model_path)  # Ensure your model was saved with joblib or adjust accordingly.
+    
+    # 8. Generate predictions.
+    y_pred_labels = xgb_model.predict(X_inference)
+    try:
+        y_pred_proba = xgb_model.predict_proba(X_inference)[:, 1]  # Probability for the "Up" class
+    except AttributeError:
+        y_pred_proba = None
+    
+    # 9. Create a DataFrame with the dates, actual Close prices, and predictions.
+    df_predictions = pd.DataFrame({
+        'Date': valid_index,
+        'XGB_Pred': y_pred_labels
+    })
+    if y_pred_proba is not None:
+        df_predictions['XGB_Prob_Up'] = y_pred_proba
+
+    # 10. Reset the index so that Date becomes a column.
+    df_predictions = df_predictions.reset_index(drop=True)
+    
+    return df_predictions
+
+
