@@ -1,128 +1,92 @@
 import numpy as np
 import pandas as pd
-import random
-from collections import deque
 import tensorflow as tf
-from tensorflow.keras import layers, models, optimizers
+from tensorflow.keras import layers, models
+import matplotlib.pyplot as plt
 
 class StockTradingEnv:
-    """
-    A simplified stock trading environment for RL.
-    Actions:
-        0 = Hold
-        1 = Buy (if not already holding)
-        2 = Sell (if holding)
-    State: 
-        [Open, High, Low, Close, Volume, XGB_Pred, XGB_Prob_Up, Position]
-    Reward:
-        - Daily unrealized gains/losses while holding
-        - Realized gains/losses when we sell
-    """
     def __init__(self, df, initial_balance=10000):
-        """
-        df: Pandas DataFrame with columns:
-            ['Open', 'High', 'Low', 'Close', 'Volume', 'XGB_Pred', 'XGB_Prob_Up', ...]
-        initial_balance: starting cash
-        """
         self.df = df.reset_index(drop=True)
         self.n_steps = len(self.df)
         self.initial_balance = initial_balance
-        self.action_space = [0, 1, 2]  # hold, buy, sell
         
-        # We define the observation space (state) shape:
-        #  - 7 numeric features from the DataFrame (Open..XGB_Prob_Up)
-        #  - 1 dimension for 'Position' (0 or 1)
-        self.state_size = 7 + 1  # e.g., 7 columns from your DF + 1 for position
+        self.action_space = [0, 1, 2]  # hold, buy, sell
+        self.state_size = 7 + 1       # 7 features + position
 
         self.reset()
 
     def reset(self):
-        """
-        Reset the environment state to the beginning.
-        Returns the initial state.
-        """
         self.current_step = 0
-        self.balance = self.initial_balance
-        self.position = 0   # 0 = not holding, 1 = holding one share
+        self.position = 0
+        self.total_shares = 0
         self.last_price = 0
-        self.total_shares = 0  # how many shares are we holding? (0 or 1 here)
+        self.balance = self.initial_balance
         
-        # For reward calculation, track the initial portfolio value
-        self.portfolio_value = self.initial_balance
-        
+        # NEW: Track only realized profit
+        self.realized_profit = 0.0
+
         return self._get_state()
 
     def step(self, action):
         """
-        Take an action:
-        0 = hold,
-        1 = buy (if not holding),
-        2 = sell (if holding).
-        
-        Returns: next_state, reward, done, info
+        Returns: (next_state, reward, done, info)
+        info can include any debugging or logging variables you like.
         """
-        done = False
         reward = 0
+        done = False
         
-        # Current day data
         current_data = self.df.iloc[self.current_step]
         current_price = current_data['Close']
 
-        # Execute the action
         if action == 1:  # buy
-            if self.position == 0:  # only buy if we are flat
+            if self.position == 0:
                 self.position = 1
                 self.total_shares = 1
                 self.last_price = current_price
-            # else do nothing if we're already holding
 
         elif action == 2:  # sell
-            if self.position == 1:  # only sell if we are holding
-                # Realize the P&L
+            if self.position == 1:
                 pnl = (current_price - self.last_price) * self.total_shares
                 self.balance += pnl
+                
+                # Update environment's realized P&L tracker
+                self.realized_profit += pnl
+
+                # RL reward can still be whatever you want:
+                reward = pnl  # e.g., realized profit only
+                
+                # Flatten position
                 self.position = 0
                 self.total_shares = 0
-                reward = pnl  # realized profit/loss as reward
-            # else do nothing if we're already flat
 
-        else:  # hold
-            pass
-
-        # Update portfolio value if we are holding
-        # (unrealized gains/losses can be included in reward or not, depending on design)
-        if self.position == 1:
-            # Unrealized P&L
-            unrealized_pnl = (current_price - self.last_price) * self.total_shares
-            # Optionally, you could incorporate partial daily reward:
-            reward += unrealized_pnl * 0.01  # e.g., partial credit for going in the right direction
+        # OPTIONAL: If you *don't* want partial unrealized reward, leave it out.
+        # if self.position == 1:
+        #     unrealized_pnl = (current_price - self.last_price) * self.total_shares
+        #     reward += unrealized_pnl * 0.01
 
         self.current_step += 1
-        
-        # Check if we're at the end of the data
         if self.current_step >= self.n_steps - 1:
             done = True
         
-        # Next state
         next_state = self._get_state()
 
-        return next_state, reward, done, {}
+        # Return info with realized profit for logging
+        info = {
+            "realized_profit": self.realized_profit,
+            "balance": self.balance,
+        }
+        return next_state, reward, done, info
 
     def _get_state(self):
-        """
-        Construct the state from the current step's data + position info.
-        The order of state features should match your agent's expectations.
-        """
-        data_row = self.df.iloc[self.current_step]
-        # Example: [Open, High, Low, Close, Volume, XGB_Pred, XGB_Prob_Up, Position]
+        current_data = self.df.iloc[self.current_step]
         state = [
-            data_row['Open'],
-            data_row['High'],
-            data_row['Low'],
-            data_row['Close'],
-            data_row['Volume'],
-            data_row['XGB_Pred'],
-            data_row['XGB_Prob_Up'],
+            current_data['Open'],
+            current_data['High'],
+            current_data['Low'],
+            current_data['Close'],
+            current_data['Volume'],
+            current_data['XGB_Pred'],
+            current_data['XGB_Prob_Up'],
             self.position
         ]
         return np.array(state, dtype=np.float32)
