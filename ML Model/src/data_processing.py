@@ -1,46 +1,47 @@
 import yfinance as yf
 import pandas as pd 
 import os
+import time
 
-def fetch_stock_data(ticker,start_date='2015-01-01', end_date='2024-01-01'):
-    """
-    Fetch historical stock data for TSLA from Yahoo Finance.
-    
-    Args:
-    start_date: str, The start date for the data fetch.
-    end_date: str, The end date for the data fetch.
-    
-    Returns:
-    tsla_data: DataFrame, The historical stock data for TSLA.
-    """
-    stock_data = yf.download(ticker, start=start_date, end=end_date)
-    
-    stock = yf.Ticker(ticker)
-    fundamentals = {
-        "DE Ratio": stock.info.get("debtToEquity"),
-        "Return on Equity": stock.info.get("returnOnEquity"),
-        "Price/Book": stock.info.get("priceToBook"),
-        "Profit Margin": stock.info.get("profitMargins"),
-        "Diluted EPS": stock.info.get("trailingEps"),
-        "Beta": stock.info.get("beta")
-    }
+import requests
+import time
+import yfinance as yf
 
-    for key, value in fundamentals.items():
-        stock_data[key] = value
+# Create a session with a user agent header
+session = requests.Session()
+session.headers.update({"User-Agent": "Mozilla/5.0"})
 
-    return stock_data
-
-def calculate_technical_indicators(df):
+def fetch_stock_data(ticker, start_date='2015-01-01', end_date='2024-01-01', retries=3, delay=10):
     """
-    Calculate common technical indicators using TA-Lib.
-    
-    Args:
-    df: DataFrame, The stock data.
-    
-    Returns:
-    df: DataFrame, The stock data with added indicators.
+    Fetch historical stock data for a ticker from Yahoo Finance with retry logic and a custom session.
     """
-    return df
+    for attempt in range(retries):
+        try:
+            # Use the custom session here
+            stock_data = yf.download(ticker, start=start_date, end=end_date, session=session, progress=False)
+            if stock_data.empty:
+                raise ValueError("Downloaded stock data is empty.")
+            
+            # Fetch fundamental info
+            stock = yf.Ticker(ticker, session=session)
+            fundamentals = {
+                "DE Ratio": stock.info.get("debtToEquity"),
+                "Return on Equity": stock.info.get("returnOnEquity"),
+                "Price/Book": stock.info.get("priceToBook"),
+                "Profit Margin": stock.info.get("profitMargins"),
+                "Diluted EPS": stock.info.get("trailingEps"),
+                "Beta": stock.info.get("beta")
+            }
+    
+            for key, value in fundamentals.items():
+                stock_data[key] = value
+            
+            return stock_data
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}. Retrying in {delay} seconds...")
+            time.sleep(delay)
+    
+    raise Exception("Failed to fetch data after multiple attempts.")
 
 def save_data_to_csv(df, filename='tsla_data.csv'):
     """

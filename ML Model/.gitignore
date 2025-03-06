@@ -14,9 +14,7 @@ env.bak/
 
 # Data files
 data/
-*.csv
 *.json
-*.xlsx
 
 # MacOS system files
 .DS_Store
