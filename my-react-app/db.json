@@ -1,0 +1,7 @@
+{
+    "stocks": [
+      { "id": 1, "name": "Apple", "price": 150, "type": "Tech" },
+      { "id": 2, "name": "Nike", "price": 90, "type": "Sportswear" },
+      { "id": 3, "name": "Goldman Sachs", "price": 200, "type": "Finance" }
+    ]
+  }

@@ -160,47 +160,9 @@ section{
 }
 
 .home .flex .image{
-   flex: 1 1 30rem;
+   flex: 1 1 1rem;
    position: relative;
    overflow: hidden;
-}
-
-.home .flex .image::before{
-   content: '';
-   position: absolute;
-   top: 0; left: 0;
-   height: 30rem;
-   width: 5rem;
-   background: var(--gradient);
-   animation:animate1 4s cubic-bezier(.29,1,.26,1.12) infinite;
-}
-
-.home .flex .image::after{
-   content: '';
-   position: absolute;
-   bottom: 0; right: 0;
-   height: 30rem;
-   width: 5rem;
-   background: var(--gradient);
-   animation:animate2 4s cubic-bezier(.29,1,.26,1.12) infinite;
-}
-
-@keyframes animate1 {
-   0%, 100%{
-      transform: translateY(0%);
-   }
-   50%{
-      transform: translateY(100%);
-   }
-}
-
-@keyframes animate2 {
-   0%, 100%{
-      transform: translateY(0%);
-   }
-   50%{
-      transform: translateY(-100%);
-   }
 }
 
 .home .flex .image img{
@@ -226,6 +188,48 @@ section{
 }
 
 /* home section ends */
+
+/* about section starts */
+
+.about{
+   background: var(--bg-color);
+}
+
+.about .flex{
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 2rem;
+}
+
+.about .flex .content{
+   flex: 1 1 40rem;
+}
+
+.about .flex .image{
+   flex: 1 1 40rem;
+}
+
+.about .flex .image img{
+   width: 100%;
+   height: 50rem;
+   object-fit: contain;
+}
+
+.about .flex .content h3{
+   font-size: 3rem;
+   color: var(--white);
+   margin-bottom: .5rem;
+}
+
+.about .flex .content p{
+   font-size: 1.6rem;
+   color: var(--light-white);
+   padding: 1rem 0;
+   line-height: 1.8;
+}
+
+/* about section ends */
 
 /* services section starts*/
 
@@ -274,128 +278,104 @@ section{
 
 /* services section ends */
 
-/* about section starts */
-
-.about{
+/* login section starts */
+.login {
+   padding: 3rem 2rem;
+   max-width: 1200px;
+   margin: 0 auto;
    background: var(--bg-color);
 }
 
-.about .flex{
+.login .flex {
    display: flex;
    align-items: center;
+   justify-content: center;
    flex-wrap: wrap;
    gap: 2rem;
+   min-height: calc(100vh - 14rem); 
 }
 
-.about .flex .content{
-   flex: 1 1 40rem;
-}
-
-.about .flex .image{
-   flex: 1 1 40rem;
-}
-
-.about .flex .image img{
-   width: 100%;
-   height: 50rem;
-   object-fit: contain;
-}
-
-.about .flex .content h3{
-   font-size: 3rem;
-   color: var(--white);
-   margin-bottom: .5rem;
-}
-
-.about .flex .content p{
-   font-size: 1.6rem;
-   color: var(--light-white);
-   padding: 1rem 0;
-   line-height: 1.8;
-}
-
-/* about section ends */
-
-/* download section starts */
-
-.download{
-   background: var(--bg-color);
-}
-
-.download .flex{
-   display: flex;
-   align-items: center;
-   flex-wrap: wrap;
-   gap: 2rem;
-}
-
-.download .flex .image{
-   flex: 1 1 40rem;
-}
-
-.download .flex .image img{
-   width: 100%;
-   height: 50rem;
-   object-fit: contain;
-}
-
-.download .flex .content{
-   flex: 1 1 40rem;
-}
-
-.download .flex .content h3{
-   font-size: 3rem;
-   color: var(--white);
-   margin-bottom: .5rem;
-}
-
-.download .flex .content p{
-   line-height: 1.8;
-   font-size: 1.6rem;
-   color: var(--light-white);
-   padding: .5rem 0;
-}
-
-.download .flex .content .links{
-   display: flex;
-   margin-top: 1rem;
-   gap: 1rem;
-   flex-wrap: wrap;
-}
-
-.download .flex .content a{
-   padding: 1rem 2rem;
-   font-size: 1.8rem;
+.login .flex .container {
+   background: var(--black);
+   padding: 3rem;
    border-radius: .5rem;
+   box-shadow: var(--box-shadow);
+   border: var(--border);
+   text-align: center;
+   max-width: 500px;
+   width: 100%;
 }
 
-.download .flex .content a i{
-   margin-right: .5rem;
-}
-
-.download .flex .content a:first-child{
-   background-color: var(--white);
-   color: var(--black);
-} 
-
-.download .flex .content a:first-child:hover{
-   background: var(--gradient);
+.login .flex .container h2 {
+   font-size: 3.5rem; 
    color: var(--white);
+   margin-bottom: 2rem;
+   text-transform: uppercase;
 }
 
-.download .flex .content a:last-child{
-   background-color: var(--bg-color);
+.login .flex .container p {
+   font-size: 1.6rem;
+   color: var(--light-white);
+   line-height: 1.8;
+   padding: 1rem 0;
+}
+
+.login .flex .container .input-field {
+   width: 100%;
+   padding: 1.5rem 2rem; 
+   margin: 1.5rem 0; 
+   border-radius: 5rem;
+   background: var(--bg-color);
    color: var(--white);
    border: var(--border);
-} 
-
-.download .flex .content a:last-child:hover{
-   background: var(--gradient);
-   border-color: transparent;
+   font-size: 1.8rem;
+   text-transform: none;
+   transition: .2s linear;
 }
 
-/* download seciton ends */
+.login .flex .container .input-field:focus {
+   border-color: rgba(255,255,255,.3); 
+}
 
+.login .flex .container .input-field::placeholder {
+   color: var(--light-white);
+   text-transform: capitalize;
+}
+
+.login .flex .container .btn {
+   width: 100%;
+   padding: 1.2rem 3rem;
+   font-size: 1.8rem;
+   background: var(--gradient);
+   color: var(--white);
+   border-radius: 5rem;
+   transition: .2s linear;
+   margin-top: 2rem; 
+   cursor: pointer;
+   text-transform: uppercase;
+}
+
+.login .flex .container .btn:hover {
+   background: var(--white);
+   color: var(--black);
+   box-shadow: var(--box-shadow);
+}
+
+.login .flex .container .forgot-password {
+   display: block;
+   margin-top: 1.5rem;
+   font-size: 1.4rem;
+   color: var(--light-white);
+   transition: .2s linear;
+}
+
+.login .flex .container .forgot-password:hover {
+   color: var(--white);
+   text-decoration: underline;
+}
+/* login section ends */
+
+/* recommendation section starts */
 .recommendation {
    background-color: var(--bg-color);
    padding: 3rem 2rem;

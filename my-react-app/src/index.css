@@ -1,0 +1,132 @@
+/* src/index.css */
+
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f4f4f9;
+    color: #333;
+  }
+  
+  /* Header styling */
+  header {
+    margin-bottom: 30px;
+  }
+  
+  .text-center {
+    text-align: center;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin: 0;
+  }
+  
+  /* SearchBar styling */
+  div > strong {
+    margin-right: 10px;
+    font-size: 1.1rem;
+  }
+  
+  label {
+    margin-right: 15px;
+    font-size: 1rem;
+  }
+  
+  input[type="radio"] {
+    margin-right: 5px;
+  }
+  
+  select {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    margin-left: 10px;
+    background-color: #fff;
+    cursor: pointer;
+  }
+  
+  select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+  }
+  
+  /* Stock and Portfolio container styling */
+  h2 {
+    font-size: 1.8rem;
+    color: #34495e;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 5px;
+  }
+  
+  /* Stock card styling */
+  .card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-body {
+    padding: 15px;
+  }
+  
+  .card-title {
+    font-size: 1.2rem;
+    margin: 0;
+    color: #2c3e50;
+  }
+  
+  .card-text {
+    font-size: 1rem;
+    color: #7f8c8d;
+    margin: 5px 0 0;
+  }
+  
+  /* Layout adjustments for MainContainer */
+  .row {
+    margin-top: 20px;
+  }
+  
+  /* StockContainer (left column) */
+  .col-8 {
+    padding-right: 20px;
+  }
+  
+  /* PortfolioContainer (right column) */
+  .col-4 {
+    padding-left: 20px;
+    border-left: 1px solid #ddd;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .col-8, .col-4 {
+      width: 100%;
+      padding: 0;
+      border: none;
+    }
+  
+    .row {
+      flex-direction: column;
+    }
+  
+    h1 {
+      font-size: 2rem;
+    }
+  
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
