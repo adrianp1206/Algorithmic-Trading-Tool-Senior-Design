@@ -1,0 +1,80 @@
+/* src/App.css */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  padding: 20px;
+}
+
+.stock-search {
+  margin: 20px 0;
+}
+
+.stock-search input {
+  padding: 10px;
+  width: 250px;
+  margin-right: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.stock-search button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.stock-search button:hover {
+  background-color: #0056b3;
+}
+
+.stock-info, .portfolio {
+  background-color: white;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 600px;
+}
+
+.actions {
+  margin: 20px 0;
+}
+
+.actions button {
+  padding: 10px 20px;
+  margin: 0 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.actions button:not(:disabled) {
+  background-color: #28a745;
+  color: white;
+}
+
+.actions button:not(:disabled):hover {
+  background-color: #218838;
+}
